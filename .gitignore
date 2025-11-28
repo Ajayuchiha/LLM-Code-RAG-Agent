@@ -1,0 +1,36 @@
+# Environment files
+.venv/
+venv/
+env/
+
+# Python caches
+__pycache__/
+*.pyc
+
+# Secrets
+.env
+config.json
+*.pem
+*.key
+
+# Vectorstore databases
+vectorstore/
+vector_db/
+chroma/
+*.sqlite3
+*.db
+*.bin
+*.wal
+*.duckdb
+
+# Model weights (very important)
+*.gguf
+*.pt
+*.safetensors
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Streamlit artifact files
+.streamlit/
