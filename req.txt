@@ -1,0 +1,23 @@
+langchain
+langchain-community
+langchain-core
+langchain-text-splitters
+langchain-ollama
+langgraph
+chromadb
+streamlit
+python-dotenv
+tiktoken
+uvicorn
+fastapi
+
+router_graph.py
+
+Replace your old call:
+
+out = rag_chain(state["query"])
+
+with:
+from agent.rag_agent import run_rag
+
+out = run_rag(state["query"])

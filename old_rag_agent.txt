@@ -1,0 +1,134 @@
+from langchain_ollama import ChatOllama, OllamaEmbeddings
+from langchain_chroma import Chroma
+from langchain_core.prompts import ChatPromptTemplate
+from local_llama3 import get_local_llama3
+
+# 1. Local LLaMA3 model
+llm = get_local_llama3()
+
+# 2. Embeddings using Nomic via Ollama
+embed = OllamaEmbeddings(model="nomic-embed-text")
+
+# 3. Chroma vectorstore (new package)
+vectorstore = Chroma(
+    collection_name="devrag-docs",
+    embedding_function=embed,
+    persist_directory="vectorstore/"
+)
+
+retriever = vectorstore.as_retriever(search_kwargs={"k": 4})
+
+# 4. Prompt
+prompt = ChatPromptTemplate.from_messages([
+    ("system", "You are a helpful assistant. Use the provided context."),
+    ("human", "Query: {query}\n\nContext:\n{context}")
+])
+
+# 5. LCEL RAG chain
+rag_chain = (
+    {
+        "context": retriever,
+        "query": lambda x: x["query"]
+    }
+    | prompt
+    | llm
+)
+
+def run_rag(query: str):
+    """Execute RAG pipeline"""
+    out = rag_chain.invoke({"query": query})
+    return out.content
+
+
+### NEW ###
+
+
+"""
+Backend rag_agent.py — ingestion + RAG chain builder (NO Streamlit)
+"""
+
+import os
+from typing import Optional, List
+
+from langchain_ollama import OllamaEmbeddings
+from langchain_chroma import Chroma
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_community.document_loaders import TextLoader, PyPDFLoader
+from langchain_core.prompts import ChatPromptTemplate
+
+from local_llama3 import get_local_llama3
+
+DB_PATH = "vector_db"
+COLLECTION_NAME = "devrag-docs"
+CHUNK_SIZE = 800
+CHUNK_OVERLAP = 150
+K_RETRIEVE = 4
+
+embeddings = OllamaEmbeddings(model="nomic-embed-text")
+text_splitter = RecursiveCharacterTextSplitter(chunk_size=CHUNK_SIZE, chunk_overlap=CHUNK_OVERLAP)
+
+vectorstore = Chroma(
+    collection_name=COLLECTION_NAME,
+    embedding_function=embeddings,
+    persist_directory=DB_PATH,
+)
+
+def _load_documents_from_path(path: str):
+    ext = os.path.splitext(path)[1].lower()
+
+    if ext == ".pdf":
+        loader = PyPDFLoader(path)
+    elif ext in [".txt", ".md"]:
+        loader = TextLoader(path)
+    else:
+        raise ValueError(f"Unsupported file type: {ext}")
+
+    return loader.load()
+
+
+def ingest_file(path: str) -> str:
+    docs = _load_documents_from_path(path)
+    chunks = text_splitter.split_documents(docs)
+
+    if not chunks:
+        return "No content extracted from file."
+
+    vectorstore.add_documents(chunks)
+
+    try:
+        vectorstore.persist()
+    except Exception:
+        pass
+
+    return f"Successfully ingested {len(chunks)} chunks from {os.path.basename(path)}"
+
+
+def create_rag_chain(k: int = K_RETRIEVE):
+    retriever = vectorstore.as_retriever(search_kwargs={"k": k})
+
+    prompt = ChatPromptTemplate.from_messages([
+        ("system", "You are a helpful assistant. Use provided context."),
+        ("human", "Query: {query}\n\nContext:\n{context}")
+    ])
+
+    llm = get_local_llama3()
+
+    rag_chain = (
+        {
+            "context": retriever,
+            "query": lambda x: x["query"]
+        }
+        | prompt
+        | llm
+    )
+
+    return rag_chain
+
+
+def run_rag_query(rag_chain, query: str) -> str:
+    out = rag_chain.invoke({"query": query})
+
+    try:
+        return out.content if hasattr(out, "content") else str(out)
+    except Exception:
+        return str(out)
