@@ -1,9 +1,3 @@
-<p align="center">
-  <img src="assets/banner.png" width="100%">
-</p>
-
-<p align="center">
-
 <a href="#"><img src="https://img.shields.io/badge/Framework-LangChain%20%7C%20LangGraph-blue?style=for-the-badge"></a>
 <a href="#"><img src="https://img.shields.io/badge/LLM-LLaMA3%208B-orange?style=for-the-badge"></a>
 <a href="#"><img src="https://img.shields.io/badge/VectorDB-ChromaDB-green?style=for-the-badge"></a>
