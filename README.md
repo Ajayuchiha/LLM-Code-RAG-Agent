@@ -6,7 +6,7 @@
 
 </p>
 
-# 🚀 DevRAG — AI Developer + Knowledge Intelligence Agent
+# 🚀AI Developer + Knowledge Intelligence Agent
 
 DevRAG is a **context-aware AI agent** that merges:
 
