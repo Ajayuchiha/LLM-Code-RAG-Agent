@@ -62,4 +62,3 @@ Intelligently routes queries to:
 | CI | GitHub Actions |
 
 ## 🚀 Running Locally
-
